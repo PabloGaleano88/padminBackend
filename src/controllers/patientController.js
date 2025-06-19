@@ -28,6 +28,26 @@ export const PatientController = {
     }
   },
 
+  getByProfessional: async (req, res) => {
+    try {
+      const professionalId = req.user.id;
+
+      const patients = await PatientModel.find({
+        "clinicalHistories.professional": professionalId,
+      })
+        .populate({
+          path: "clinicalHistories.history",
+          match: { professional: professionalId }, // Solo historias del profesional
+        })
+        .populate("clinicalHistories.professional", "name email role");
+
+      res.json(patients);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: "Error al obtener los pacientes" });
+    }
+  },
+
   // Obtener un paciente por ID
   getById: async (req, res) => {
     try {

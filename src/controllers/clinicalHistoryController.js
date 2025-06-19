@@ -1,28 +1,57 @@
 import ClinicalHistoryModel from "../models/clinicalHistoryModel.js";
 
 export const ClinicalHistoryController = {
-  create: async (req, res) => {
+  getByProfessional: async (req, res) => {
     try {
-      const clinicalHistory = await ClinicalHistoryModel.create(req.body);
-      res.status(201).json(clinicalHistory);
-    } catch (error) {
-      res
-        .status(400)
-        .json({ error: "Error al crear la historia clínica", details: error });
-    }
-  },
-  getAll: async (req, res) => {
-    try {
-      const clinicalHistories = await ClinicalHistoryModel.find({
-        professional: req.user.id,
+      const professionalId = req.user.id;
+
+      const histories = await ClinicalHistoryModel.find({
+        professional: professionalId,
       })
         .populate("patient", "firstName lastName dni birthDate")
-        .populate("professional", "firstName lastName email role");
-      res.json(clinicalHistories);
+        .populate("professional", "name email role");
+
+      res.json(histories);
     } catch (error) {
-      res
-        .status(500)
-        .json({ error: "Error al obtener las historias clínicas" });
+      console.error(error);
+      res.status(500).json({
+        error: "Error al obtener las historias clínicas del profesional",
+      });
+    }
+  },
+  create: async (req, res) => {
+    try {
+      const professionalId = req.user.id;
+      const { patient, date, observations, diagnosis, treatment } = req.body;
+
+      // Verificar que el paciente exista
+      const existingPatient = await PatientModel.findById(patient);
+      if (!existingPatient) {
+        return res.status(404).json({ error: "Paciente no encontrado" });
+      }
+
+      // Crear historia clínica
+      const newHistory = await ClinicalHistoryModel.create({
+        patient,
+        professional: professionalId,
+        date,
+        observations,
+        diagnosis,
+        treatment,
+      });
+
+      // Asociar historia clínica al paciente (opcional)
+      existingPatient.clinicalHistories.push({
+        professional: professionalId,
+        history: newHistory._id,
+      });
+
+      await existingPatient.save();
+
+      res.status(201).json(newHistory);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: "Error al crear la historia clínica" });
     }
   },
 
@@ -44,37 +73,78 @@ export const ClinicalHistoryController = {
 
   update: async (req, res) => {
     try {
+      const professionalId = req.user.id;
       const { id } = req.params;
-      const updatedClinicalHistory =
-        await ClinicalHistoryModel.findByIdAndUpdate(id, req.body, {
-          new: true,
-        })
-          .populate("patient", "firstName lastName dni birthDate")
-          .populate("professional", "firstName lastName email role");
-      if (!updatedClinicalHistory) {
-        res.status(404).json({ error: "Historia clínica no encontrada" });
-        return;
+
+      // Buscar la historia clínica
+      const history = await ClinicalHistoryModel.findById(id);
+
+      if (!history) {
+        return res
+          .status(404)
+          .json({ error: "Historia clínica no encontrada" });
       }
-      res.json(updatedClinicalHistory);
+
+      // Verificar que el profesional sea el creador
+      if (history.professional.toString() !== professionalId) {
+        return res.status(403).json({
+          error: "No tienes permiso para modificar esta historia clínica",
+        });
+      }
+
+      // Actualizar la historia clínica
+      const updated = await ClinicalHistoryModel.findByIdAndUpdate(
+        id,
+        req.body,
+        {
+          new: true,
+        }
+      );
+
+      res.json(updated);
     } catch (error) {
+      console.error(error);
       res
-        .status(400)
+        .status(500)
         .json({ error: "Error al actualizar la historia clínica" });
     }
   },
 
   remove: async (req, res) => {
     try {
+      const professionalId = req.user.id;
       const { id } = req.params;
-      const deletedClinicalHistory =
-        await ClinicalHistoryModel.findByIdAndDelete(id);
-      if (!deletedClinicalHistory) {
-        res.status(404).json({ error: "Historia clínica no encontrada" });
-        return;
+
+      const history = await ClinicalHistoryModel.findById(id);
+
+      if (!history) {
+        return res
+          .status(404)
+          .json({ error: "Historia clínica no encontrada" });
       }
+
+      // Verificar autoría
+      if (history.professional.toString() !== professionalId) {
+        return res
+          .status(403)
+          .json({
+            error: "No tienes permiso para eliminar esta historia clínica",
+          });
+      }
+
+      // Eliminar la historia clínica
+      await ClinicalHistoryModel.findByIdAndDelete(id);
+
+      // Eliminar también la referencia en el paciente
+      await PatientModel.updateOne(
+        { _id: history.patient },
+        { $pull: { clinicalHistories: { history: history._id } } }
+      );
+
       res.json({ message: "Historia clínica eliminada correctamente" });
     } catch (error) {
-      res.status(400).json({ error: "Error al eliminar la historia clínica" });
+      console.error(error);
+      res.status(500).json({ error: "Error al eliminar la historia clínica" });
     }
   },
 };
