@@ -22,43 +22,32 @@ export const ClinicalHistoryController = {
   },
   create: async (req, res) => {
     try {
-      const professionalId = req.user.id;
-      const { patient, date, observations, diagnosis, treatment } = req.body;
-
-      // Verificar que el paciente exista
-      const existingPatient = await PatientModel.findById(patient);
-      if (!existingPatient) {
-        return res.status(404).json({ error: "Paciente no encontrado" });
-      }
-
-      // Crear historia clínica
-      const newHistory = await ClinicalHistoryModel.create({
-        patient,
-        professional: professionalId,
-        date,
-        observations,
-        diagnosis,
-        treatment,
+      const history = await ClinicalHistoryModel.create({
+        patient: req.body.patient,
+        professional: req.user.id, // asumimos que usás authMiddleware
+        observations: req.body.observations,
+        diagnosis: req.body.diagnosis,
+        treatment: req.body.treatment,
       });
 
-      // Asociar historia clínica al paciente (opcional)
-      if (!existingPatient.clinicalHistories) {
-        existingPatient.clinicalHistories = [];
-      }
-      existingPatient.clinicalHistories.push({
-        professional: professionalId,
-        history: newHistory._id,
-      });
-
-      await existingPatient.save();
-
-      res.status(201).json(newHistory);
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({ error: "Error al crear la historia clínica" });
+      res.status(201).json(history);
+    } catch (err) {
+      console.error("Error al crear historia clínica:", err);
+      res.status(500).json({ error: "Error al crear historia clínica" });
     }
   },
 
+  getByPatient: async (req, res) => {
+    try {
+      const { patientId } = req.params;
+      const historias = await ClinicalHistoryModel.find({
+        patient: patientId,
+      }).sort({ date: -1 });
+      res.json(historias);
+    } catch (error) {
+      res.status(500).json({ error: "Error al obtener la historia clínica" });
+    }
+  },
   getById: async (req, res) => {
     try {
       const { id } = req.params;
