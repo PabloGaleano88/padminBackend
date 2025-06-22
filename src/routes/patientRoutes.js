@@ -8,7 +8,7 @@ const router = Router();
 router.use(authMiddleware);
 
 router.post("/", PatientController.create);
-router.get("/", authMiddleware, PatientController.getByProfessional);
+router.get("/", PatientController.getByProfessional);
 router.get("/:id", PatientController.getById);
 router.put("/:id", PatientController.update);
 router.delete("/:id", PatientController.remove);

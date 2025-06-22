@@ -1,4 +1,5 @@
 import PatientModel from "../models/patientModel.js";
+import ClinicalHistoryModel from "../models/clinicalHistoryModel.js";
 
 export const PatientController = {
   // Crear un paciente
@@ -30,21 +31,25 @@ export const PatientController = {
 
   getByProfessional: async (req, res) => {
     try {
-      const professionalId = req.user.id;
+      const userId = req.user.id;
 
-      const patients = await PatientModel.find({
-        "clinicalHistories.professional": professionalId,
-      })
-        .populate({
-          path: "clinicalHistories.history",
-          match: { professional: professionalId }, // Solo historias del profesional
-        })
-        .populate("clinicalHistories.professional", "name email role");
+      // 1. Buscar historias clínicas del profesional
+      const historias = await ClinicalHistoryModel.find({
+        professional: userId,
+      });
 
-      res.json(patients);
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({ error: "Error al obtener los pacientes" });
+      // 2. Extraer IDs únicos de pacientes
+      const patientIds = [
+        ...new Set(historias.map((historia) => historia.patient.toString())),
+      ];
+
+      // 3. Buscar los pacientes asociados
+      const pacientes = await PatientModel.find({ _id: { $in: patientIds } });
+
+      res.json(pacientes);
+    } catch (err) {
+      console.error("Error al obtener pacientes del profesional:", err);
+      res.status(500).json({ error: "Error interno del servidor" });
     }
   },
 

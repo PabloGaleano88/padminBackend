@@ -5,8 +5,6 @@ const ClinicalHistorySchema = new Schema({
   professional: { type: Types.ObjectId, ref: "User", required: true },
   date: { type: Date, default: Date.now },
   observations: { type: String },
-  diagnosis: { type: String },
-  treatment: { type: String },
 });
 
 export default ClinicalHistorySchema;

@@ -1,4 +1,5 @@
 import ClinicalHistoryModel from "../models/clinicalHistoryModel.js";
+import PatientModel from "../models/patientModel.js";
 
 export const ClinicalHistoryController = {
   getByProfessional: async (req, res) => {
@@ -41,6 +42,9 @@ export const ClinicalHistoryController = {
       });
 
       // Asociar historia clínica al paciente (opcional)
+      if (!existingPatient.clinicalHistories) {
+        existingPatient.clinicalHistories = [];
+      }
       existingPatient.clinicalHistories.push({
         professional: professionalId,
         history: newHistory._id,
@@ -125,11 +129,9 @@ export const ClinicalHistoryController = {
 
       // Verificar autoría
       if (history.professional.toString() !== professionalId) {
-        return res
-          .status(403)
-          .json({
-            error: "No tienes permiso para eliminar esta historia clínica",
-          });
+        return res.status(403).json({
+          error: "No tienes permiso para eliminar esta historia clínica",
+        });
       }
 
       // Eliminar la historia clínica
