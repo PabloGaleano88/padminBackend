@@ -5,6 +5,8 @@ console.log("AuthController:", AuthController);
 
 const router = Router();
 
+router.post("/forgot-password", AuthController.forgotPassword);
+router.post("/reset-password/:token", AuthController.resetPassword);
 router.post("/google", AuthController.googleLogin);
 router.post("/login", AuthController.login);
 router.post("/register", AuthController.register); // <-- nuevo endpoint
