@@ -70,7 +70,7 @@ export const AuthController = {
         expiresIn: "1h",
       });
 
-      res.json({ token, user: payload }); // ✅ solo una respuesta
+      res.json({ token, user: payload });
     } catch (error) {
       console.error(error);
       res.status(500).json({ error: "Error en el servidor" });
@@ -100,13 +100,18 @@ export const AuthController = {
         });
       }
 
-      const token = jwt.sign(
-        { id: user._id, email: user.email, role: user.role },
-        process.env.JWT_SECRET,
-        { expiresIn: "1h" }
-      );
+      const tokenPayload = {
+        id: user._id,
+        name: user.name, // ✅ nombre para mostrarlo en frontend
+        email: user.email,
+        role: user.role,
+      };
 
-      res.json({ token, user });
+      const token = jwt.sign(tokenPayload, process.env.JWT_SECRET, {
+        expiresIn: "1h",
+      });
+
+      res.json({ token, user: tokenPayload });
     } catch (error) {
       console.error("Error verificando token de Google", error);
       res.status(401).json({ error: "Token inválido de Google" });

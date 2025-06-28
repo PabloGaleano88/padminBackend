@@ -8,6 +8,7 @@ const PatientSchema = new Schema({
   phone: { type: String },
   email: { type: String, lowercase: true },
   createdAt: { type: Date, default: Date.now },
+  motivoConsulta: { type: String },
   clinicalHistories: [
     {
       professional: { type: Types.ObjectId, ref: "User", required: true },
