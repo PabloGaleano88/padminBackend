@@ -5,6 +5,12 @@ export const PatientController = {
   // Crear un paciente
   create: async (req, res) => {
     try {
+      if (req.body.birthDate) {
+        const birthDate = new Date(req.body.birthDate);
+        birthDate.setUTCHours(12, 0, 0, 0); // Setea mediodía UTC para evitar desfases de huso horario
+        req.body.birthDate = birthDate;
+      }
+
       const patient = await PatientModel.create(req.body);
       res.status(201).json(patient);
     } catch (error) {
