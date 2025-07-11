@@ -31,8 +31,28 @@ export const PatientController = {
       const patientIds = histories.map((h) => h.patient);
 
       const patients = await PatientModel.find({ _id: { $in: patientIds } });
-      res.json(patients);
+
+      // Para cada paciente, buscar próximo turno
+      const patientsWithNextAppointment = await Promise.all(
+        patients.map(async (patient) => {
+          // Buscar próximo turno >= hoy para este paciente
+          const nextAppointment = await AppointmentModel.findOne({
+            patient: patient._id,
+            date: { $gte: new Date() },
+          })
+            .sort({ date: 1 })
+            .lean();
+
+          return {
+            ...patient.toObject(),
+            proximoTurno: nextAppointment || null,
+          };
+        })
+      );
+
+      res.json(patientsWithNextAppointment);
     } catch (error) {
+      console.error(error);
       res.status(500).json({ error: "Error al obtener los pacientes" });
     }
   },
@@ -41,20 +61,33 @@ export const PatientController = {
     try {
       const userId = req.user.id;
 
-      // 1. Buscar historias clínicas del profesional
+      // Buscar historias clínicas del profesional
       const historias = await ClinicalHistoryModel.find({
         professional: userId,
       });
-
-      // 2. Extraer IDs únicos de pacientes
       const patientIds = [
-        ...new Set(historias.map((historia) => historia.patient.toString())),
+        ...new Set(historias.map((h) => h.patient.toString())),
       ];
 
-      // 3. Buscar los pacientes asociados
+      // Buscar los pacientes asociados
       const pacientes = await PatientModel.find({ _id: { $in: patientIds } });
 
-      res.json(pacientes);
+      // Buscar el próximo turno para cada paciente
+      const pacientesConTurno = await Promise.all(
+        pacientes.map(async (paciente) => {
+          const turno = await AppointmentModel.findOne({
+            patient: paciente._id,
+            date: { $gte: new Date() },
+          }).sort({ date: 1 });
+
+          return {
+            ...paciente.toObject(),
+            proximoTurno: turno ? turno.date : null,
+          };
+        })
+      );
+
+      res.json(pacientesConTurno);
     } catch (err) {
       console.error("Error al obtener pacientes del profesional:", err);
       res.status(500).json({ error: "Error interno del servidor" });
