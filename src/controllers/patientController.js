@@ -65,24 +65,12 @@ export const PatientController = {
       const { id } = req.params;
       const patient = await PatientModel.findById(id);
       if (!patient) {
-        return res.status(404).json({ error: "Paciente no encontrado" });
+        res.status(404).json({ error: "Paciente no encontrado" });
+        return;
       }
-
-      // Buscar el próximo turno
-      const proximoTurno = await AppointmentModel.findOne({
-        patient: id,
-        date: { $gte: new Date() },
-      })
-        .sort({ date: 1 })
-        .populate("professional", "name"); // opcional: para mostrar nombre del profesional
-
-      res.json({
-        ...patient.toObject(), // convertir de Mongoose Document a objeto simple
-        proximoTurno,
-      });
+      res.json(patient);
     } catch (error) {
-      console.error("Error en getById:", error);
-      res.status(400).json({ error: "ID inválido o error interno" });
+      res.status(400).json({ error: "ID inválido" });
     }
   },
 
