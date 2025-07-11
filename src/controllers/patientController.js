@@ -1,5 +1,6 @@
 import PatientModel from "../models/patientModel.js";
 import ClinicalHistoryModel from "../models/clinicalHistoryModel.js";
+import AppointmentModel from "../models/appointmentModel.js";
 
 export const PatientController = {
   // Crear un paciente
@@ -59,14 +60,17 @@ export const PatientController = {
     }
   },
 
+  // Obtener un paciente por ID
   getById: async (req, res) => {
     try {
       const { id } = req.params;
-      console.log("Recibí ID:", id);
+
+      if (!mongoose.Types.ObjectId.isValid(id)) {
+        return res.status(400).json({ error: "ID inválido" });
+      }
 
       const patient = await PatientModel.findById(id);
       if (!patient) {
-        console.log("Paciente no encontrado en la base de datos");
         return res.status(404).json({ error: "Paciente no encontrado" });
       }
 
@@ -83,7 +87,7 @@ export const PatientController = {
       });
     } catch (error) {
       console.error("Error en getById:", error);
-      res.status(400).json({ error: "ID inválido o error interno" });
+      res.status(500).json({ error: "Error interno del servidor" });
     }
   },
 
