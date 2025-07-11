@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import PatientModel from "../models/patientModel.js";
 import ClinicalHistoryModel from "../models/clinicalHistoryModel.js";
 import AppointmentModel from "../models/appointmentModel.js";
