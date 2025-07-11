@@ -59,18 +59,31 @@ export const PatientController = {
     }
   },
 
-  // Obtener un paciente por ID
   getById: async (req, res) => {
     try {
       const { id } = req.params;
+      console.log("Recibí ID:", id);
+
       const patient = await PatientModel.findById(id);
       if (!patient) {
-        res.status(404).json({ error: "Paciente no encontrado" });
-        return;
+        console.log("Paciente no encontrado en la base de datos");
+        return res.status(404).json({ error: "Paciente no encontrado" });
       }
-      res.json(patient);
+
+      const proximoTurno = await AppointmentModel.findOne({
+        patient: id,
+        date: { $gte: new Date() },
+      })
+        .sort({ date: 1 })
+        .populate("professional", "name");
+
+      res.json({
+        ...patient.toObject(),
+        proximoTurno,
+      });
     } catch (error) {
-      res.status(400).json({ error: "ID inválido" });
+      console.error("Error en getById:", error);
+      res.status(400).json({ error: "ID inválido o error interno" });
     }
   },
 
