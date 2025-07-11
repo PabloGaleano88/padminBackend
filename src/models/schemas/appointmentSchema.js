@@ -1,19 +1,11 @@
-import mongoose from "mongoose";
+// src/schemas/appointmentSchema.js
+import { Schema, Types } from "mongoose";
 
-const AppointmentSchema = new mongoose.Schema({
-  patient: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Patient",
-    required: true,
-  },
-  professional: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "User",
-    required: true,
-  },
+const AppointmentSchema = new Schema({
+  patient: { type: Types.ObjectId, ref: "Patient", required: true },
+  professional: { type: Types.ObjectId, ref: "User", required: true },
   date: { type: Date, required: true },
   notes: { type: String },
-  createdAt: { type: Date, default: Date.now },
 });
 
-export default mongoose.model("Appointment", AppointmentSchema);
+export default AppointmentSchema;
