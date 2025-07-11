@@ -8,6 +8,7 @@ import userRoutes from "./routes/userRoutes.js";
 import patientRoutes from "./routes/patientRoutes.js";
 import clinicalHistoryRoutes from "./routes/clinicalHistoryRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
+import appointmentRoutes from "./routes/appointmentsRoutes.js";
 
 dotenv.config();
 
@@ -30,6 +31,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/patients", patientRoutes);
 app.use("/api/clinicalhistory", clinicalHistoryRoutes);
+app.use("/api/appointments", appointmentRoutes);
 
 // Puerto
 const PORT = process.env.PORT || 3000;
