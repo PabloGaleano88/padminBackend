@@ -71,7 +71,8 @@ export const PatientController = {
 
       const patient = await PatientModel.findById(id);
       if (!patient) {
-        return res.status(404).json({ error: "Paciente no encontrado" });
+        res.status(404).json({ error: "Paciente no encontrado" });
+        return;
       }
 
       const proximoTurno = await AppointmentModel.findOne({
